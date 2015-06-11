@@ -304,5 +304,8 @@
 		<configuration configurationName="Debug">
 			<resource resourceType="PROJECT" workspacePath="/wakaama-mbed-application-board"/>
 		</configuration>
+		<configuration configurationName="Run">
+			<resource resourceType="PROJECT" workspacePath="/wakaama-mbed-application-board"/>
+		</configuration>
 	</storageModule>
 </cproject>

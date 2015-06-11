@@ -47,9 +47,10 @@ LD_SYS_LIBS = -lstdc++ -lsupc++ -lm -lc -lgcc -lnosys
 
 ifeq ($(DEBUG), 1)
   CC_FLAGS += -DDEBUG -O0
-  CC_SYMBOLS += -D__DEBUG__=3
+  CC_SYMBOLS += -D__DEBUG__=4 # DEBUG level
   CC_SYMBOLS += ${WAKAAMA_SYM_DEBUG}
 else
+  CC_SYMBOLS += -D__DEBUG__=1 # ERROR level
   CC_FLAGS += -DNDEBUG -Os
 endif
 
