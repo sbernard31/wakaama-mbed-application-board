@@ -1,4 +1,4 @@
-APP_OBJ = main.o 
+APP_OBJ = main.o  dbg.o
 
 LCD_OBJ = ./C12832/TextDisplay.o ./C12832/GraphicsDisplay.o ./C12832/C12832.o
 LCD_INC = -I./C12832
@@ -9,7 +9,8 @@ ACCELEROMETERS_INC = -I./MMA7660
 WAKAAMA_CLIENT_OBJ = ./wakaama/client_objects/object_device.o ./wakaama/client_objects/object_security.o ./wakaama/client_objects/object_firmware.o ./wakaama/client_objects/object_server.o
 WAKAAMA_OBJ = $(WAKAAMA_CLIENT_OBJ) ./wakaama/observe.o ./wakaama/transaction.o ./wakaama/bootstrap.o ./wakaama/list.o ./wakaama/liblwm2m.o ./wakaama/utils.o ./wakaama/objects.o ./wakaama/packet.o ./wakaama/tlv.o ./wakaama/management.o ./wakaama/uri.o ./wakaama/registration.o ./wakaama/er-coap-13/er-coap-13.o
 WAKAAMA_INC = -I./wakaama -I./wakaama/er-coap-13
-WAKAAMA_SYM = -DWITH_LOGS -DLWM2M_LITTLE_ENDIAN -DLWM2M_CLIENT_MODE
+WAKAAMA_SYM = -DLWM2M_LITTLE_ENDIAN -DLWM2M_CLIENT_MODE
+WAKAAMA_SYM_DEBUG = -DWITH_LOGS
 
 ETHERNET_OBJ = ./EthernetInterface/lwip/core/mem.o ./EthernetInterface/lwip/core/tcp.o ./EthernetInterface/lwip/core/netif.o ./EthernetInterface/lwip/core/tcp_in.o ./EthernetInterface/lwip/core/dhcp.o ./EthernetInterface/lwip/core/memp.o ./EthernetInterface/lwip/core/tcp_out.o ./EthernetInterface/lwip/core/udp.o ./EthernetInterface/lwip/core/def.o ./EthernetInterface/lwip/core/stats.o ./EthernetInterface/lwip/core/dns.o ./EthernetInterface/lwip/core/raw.o ./EthernetInterface/lwip/core/timers.o ./EthernetInterface/lwip/core/pbuf.o ./EthernetInterface/lwip/core/init.o ./EthernetInterface/lwip/core/ipv4/igmp.o ./EthernetInterface/lwip/core/ipv4/ip_frag.o ./EthernetInterface/lwip/core/ipv4/autoip.o ./EthernetInterface/lwip/core/ipv4/inet.o ./EthernetInterface/lwip/core/ipv4/icmp.o ./EthernetInterface/lwip/core/ipv4/ip_addr.o ./EthernetInterface/lwip/core/ipv4/inet_chksum.o ./EthernetInterface/lwip/core/ipv4/ip.o ./EthernetInterface/lwip/core/snmp/msg_in.o ./EthernetInterface/lwip/core/snmp/asn1_enc.o ./EthernetInterface/lwip/core/snmp/mib_structs.o ./EthernetInterface/lwip/core/snmp/asn1_dec.o ./EthernetInterface/lwip/core/snmp/mib2.o ./EthernetInterface/lwip/core/snmp/msg_out.o ./EthernetInterface/lwip/api/netifapi.o ./EthernetInterface/lwip/api/sockets.o ./EthernetInterface/lwip/api/netbuf.o ./EthernetInterface/lwip/api/netdb.o ./EthernetInterface/lwip/api/api_lib.o ./EthernetInterface/lwip/api/err.o ./EthernetInterface/lwip/api/api_msg.o ./EthernetInterface/lwip/api/tcpip.o ./EthernetInterface/lwip/netif/etharp.o ./EthernetInterface/lwip/netif/slipif.o ./EthernetInterface/lwip/netif/ethernetif.o ./EthernetInterface/lwip/netif/ppp/auth.o ./EthernetInterface/lwip/netif/ppp/pap.o ./EthernetInterface/lwip/netif/ppp/randm.o ./EthernetInterface/lwip/netif/ppp/md5.o ./EthernetInterface/lwip/netif/ppp/lcp.o ./EthernetInterface/lwip/netif/ppp/magic.o ./EthernetInterface/lwip/netif/ppp/chap.o ./EthernetInterface/lwip/netif/ppp/ppp.o ./EthernetInterface/lwip/netif/ppp/ppp_oe.o ./EthernetInterface/lwip/netif/ppp/ipcp.o ./EthernetInterface/lwip/netif/ppp/vj.o ./EthernetInterface/lwip/netif/ppp/fsm.o ./EthernetInterface/lwip/netif/ppp/chpms.o ./EthernetInterface/lwip-sys/arch/sys_arch.o ./EthernetInterface/lwip-sys/arch/checksum.o ./EthernetInterface/lwip-sys/arch/memcpy.o ./EthernetInterface/lwip-eth/arch/TARGET_NXP/lpc17_emac.o ./EthernetInterface/lwip-eth/arch/TARGET_NXP/lpc_phy_dp83848.o ./EthernetInterface/EthernetInterface.o ./EthernetInterface/Socket/Endpoint.o ./EthernetInterface/Socket/TCPSocketServer.o ./EthernetInterface/Socket/UDPSocket.o ./EthernetInterface/Socket/Socket.o ./EthernetInterface/Socket/TCPSocketConnection.o
 ETHERNET_INC = -I./EthernetInterface -I./EthernetInterface/Socket -I./EthernetInterface/lwip -I./EthernetInterface/lwip/core -I./EthernetInterface/lwip/core/ipv4 -I./EthernetInterface/lwip/core/snmp -I./EthernetInterface/lwip/api -I./EthernetInterface/lwip/netif -I./EthernetInterface/lwip/netif/ppp -I./EthernetInterface/lwip/include -I./EthernetInterface/lwip/include/ipv4 -I./EthernetInterface/lwip/include/ipv4/lwip -I./EthernetInterface/lwip/include/lwip -I./EthernetInterface/lwip/include/netif -I./EthernetInterface/lwip-sys -I./EthernetInterface/lwip-sys/arch -I./EthernetInterface/lwip-eth -I./EthernetInterface/lwip-eth/arch -I./EthernetInterface/lwip-eth/arch/TARGET_NXP
@@ -46,6 +47,8 @@ LD_SYS_LIBS = -lstdc++ -lsupc++ -lm -lc -lgcc -lnosys
 
 ifeq ($(DEBUG), 1)
   CC_FLAGS += -DDEBUG -O0
+  CC_SYMBOLS += -D__DEBUG__=3
+  CC_SYMBOLS += ${WAKAAMA_SYM_DEBUG}
 else
   CC_FLAGS += -DNDEBUG -Os
 endif

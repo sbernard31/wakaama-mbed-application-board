@@ -14,10 +14,15 @@
  *    Julien Vermillard,
  *    Simon Bernard
  *******************************************************************************/
+#ifndef __MODULE__
+#define __MODULE__ "main.cpp"
+#endif
+
 #include "mbed.h"
 #include "EthernetInterface.h"
 #include "C12832.h"
 #include "object_accelerometer.cpp"
+#include "dbg.h"
 
 extern "C" {
 #include "wakaama/liblwm2m.h"
@@ -50,7 +55,7 @@ void ethSetup() {
     EthernetInterface eth;
     eth.init(); //Use DHCP
     eth.connect();
-    printf("IP Address is %s\n", eth.getIPAddress());
+    INFO("IP Address is %s", eth.getIPAddress());
 
     udp.init();
     udp.bind(5683);
@@ -72,16 +77,16 @@ static void * prv_connect_server(uint16_t serverID, void * userData) {
     int port;
     connection_t * connP = NULL;
 
-    printf("Create connection for server %d\n", serverID);
+    INFO("Create connection for server %d", serverID);
 
     // need to created a connection to the server identified by server ID
     char* uri = get_server_uri(securityObjP, serverID);
 
     if (uri == NULL) {
-        printf("server %d not found in security object\n", serverID);
+        INFO("server %d not found in security object", serverID);
         return NULL;
     }
-    printf("URI: %s\n", uri);
+    INFO("URI: %s", uri);
 
     // parse uri in the form "coaps://[host]:[port]"
     if (0 == strncmp(uri, "coap://", strlen("coap://"))) {
@@ -100,12 +105,12 @@ static void * prv_connect_server(uint16_t serverID, void * userData) {
         goto exit;
     }
 
-    printf("Trying to connect to LWM2M Server at %s:%d\r\n", host, port);
+    INFO("Trying to connect to LWM2M Server at %s:%d", host, port);
 
     //  create a connection
     connP = (connection_t *) malloc(sizeof(connection_t));
     if (connP == NULL) {
-        printf("Connection creation fail (malloc)\n");
+        INFO("Connection creation fail (malloc)");
         goto exit;
     } else {
         connP->port = port;
@@ -114,7 +119,7 @@ static void * prv_connect_server(uint16_t serverID, void * userData) {
         connP->ep.set_address(connP->host, port);
 
         connList = connP;
-        printf("udp connection created\n");
+        INFO("udp connection created");
     }
     exit: free(uri);
 
@@ -123,19 +128,19 @@ static void * prv_connect_server(uint16_t serverID, void * userData) {
 
 /* send a buffer to a session*/
 static uint8_t prv_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userdata) {
-    printf("sending\n");
+    INFO("sending");
     connection_t * connP = (connection_t*) sessionH;
 
     if (connP == NULL) {
-        printf("#> failed sending %u bytes, missing connection\r\n", length);
+        INFO("#> failed sending %u bytes, missing connection", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
-    printf("sending to %s\n", connP->ep.get_address());
+    INFO("sending to %s", connP->ep.get_address());
 
-    printf("send NO_SEC datagram\n");
+    INFO("send NO_SEC datagram");
     if (-1 == udp.sendTo(connP->ep, (char*) buffer, length)) {
-        printf("send error\n");
+        INFO("send error");
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
     return COAP_NO_ERROR ;
@@ -146,12 +151,12 @@ int main() {
 
     lwm2m_object_t * objArray[5];
 
-    printf("Start Smart watch\n");
+    INFO("Start Smart watch");
 
     ethSetup();
     lcd.cls();
 
-    printf("Initialazing Wakaama\n");
+    INFO("Initialazing Wakaama");
 
     // create objects
     objArray[0] = get_security_object(123, "coap://10.42.0.1:5683", false);
@@ -168,7 +173,7 @@ int main() {
      */
     lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, NULL);
     if (NULL == lwm2mH) {
-        fprintf(stderr, "lwm2m_init() failed\r\n");
+        fprintf(stderr, "lwm2m_init() failed");
         return -1;
     }
 
@@ -176,7 +181,7 @@ int main() {
     result = lwm2m_configure(lwm2mH, "smart-watch", NULL, NULL, 5, objArray);
 
     if (result != 0) {
-        printf("lwm2m_configure() failed: 0x%X\n", result);
+        INFO("lwm2m_configure() failed: 0x%X", result);
         return -1;
     }
 
@@ -184,7 +189,7 @@ int main() {
 
     result = lwm2m_start(lwm2mH);
     if (result != 0) {
-        printf("lwm2m_start() failed: 0x%X\n", result);
+        INFO("lwm2m_start() failed: 0x%X", result);
         return -1;
     }
 
@@ -194,7 +199,7 @@ int main() {
         char buffer[1024];
         Endpoint server;
 
-        printf("loop...\n");
+        INFO("loop...");
         struct timeval timeout;
         timeout.tv_sec = 10;
         timeout.tv_usec = 0;
@@ -207,25 +212,25 @@ int main() {
 
         result = lwm2m_step(lwm2mH, &timeout.tv_sec);
         if (result != 0) {
-            printf("lwm2m_step error %d\n", result);
+            INFO("lwm2m_step error %d", result);
         }
         int n = udp.receiveFrom(server, buffer, sizeof(buffer));
-        printf("Received packet from: %s of size %d\n", server.get_address(), n);
+        INFO("Received packet from: %s of size %d", server.get_address(), n);
         if (n > 0) {
             // TODO: find connection
             connection_t * connP = connList;
             while (connP != NULL) {
                 if (strcmp(connP->host, server.get_address()) == 0) {
 
-                    printf("found connection\n");
+                    INFO("found connection");
                     // is it a secure connection?
-                    printf("nosec session\n");
+                    INFO("nosec session");
                     lwm2m_handle_packet(lwm2mH, (uint8_t*) buffer, n, (void*) connP);
                     break;
                 }
             }
             if (connP == NULL)
-                printf("no connection\n");
+                INFO("no connection");
         }
         lwm2m_uri_t URI1;
         URI1.objectId = 3313;

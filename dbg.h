@@ -24,7 +24,6 @@
 extern "C" {
 #endif
 
-
 void debug_init(void);
 void debug(int level, const char* module, int line, const char* fmt, ...);
 void debug_set_newline(const char* newline);
@@ -40,7 +39,7 @@ void debug_exact(const char* fmt, ...);
 
 #if __DEBUG__ > 0
 #ifndef __MODULE__
-#error "__MODULE__ must be defined"
+#define __MODULE__ __FILE__
 #endif
 #endif
 

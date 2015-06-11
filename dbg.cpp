@@ -78,20 +78,20 @@ void debug(int level, const char* module, int line, const char* fmt, ...)
   {
   default:
   case 1:
-    printf("E");
+    printf("[ERR:");
     break;
   case 2:
-    printf("W");
+    printf("[WRN:");
     break;
   case 3:
-    printf("I");
+    printf("[INF:");
     break;
   case 4:
-    printf("D");
+    printf("[DBG:");
     break;
   }
 
-  printf(" %s:%d ", module, line);
+  printf("%s:%4d] ", module, line);
 
   va_list argp;
 
