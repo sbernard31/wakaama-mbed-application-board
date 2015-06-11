@@ -28,8 +28,6 @@ extern "C" {
 #include "wakaama/liblwm2m.h"
 }
 
-C12832 lcd(p5, p7, p6, p8, p11);
-
 extern "C" {
 extern lwm2m_object_t * get_object_device();
 extern lwm2m_object_t * get_object_firmware();
@@ -38,44 +36,47 @@ extern lwm2m_object_t * get_security_object(int serverId, const char* serverUri,
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
 }
 
-// a linked logical connection to a server
-typedef struct _connection_t {
-    struct _connection_t * next;
+#define ENDPOINT_NAME "lcp1768"
+#define LOOP_TIMEOUT 1000
+
+// a linked logical lwm2m session to a server
+typedef struct session_t {
+    struct session_t * next;
     char * host;
     int port;
     Endpoint ep;
-} connection_t;
+} session_t;
 
-DigitalOut myled(LED1);
+// the lcd screen
+C12832 lcd(p5, p7, p6, p8, p11);
 
 // the server UDP socket
 UDPSocket udp;
 
 void ethSetup() {
     EthernetInterface eth;
-    eth.init(); //Use DHCP
+    eth.init(); // use DHCP
     eth.connect();
     INFO("IP Address is %s", eth.getIPAddress());
 
     udp.init();
     udp.bind(5683);
 
-    udp.set_blocking(false, 1000);
+    udp.set_blocking(false, LOOP_TIMEOUT);
 }
 
 // globals for accessing configuration
 lwm2m_context_t * lwm2mH = NULL;
 lwm2m_object_t * securityObjP;
 lwm2m_object_t * serverObject;
-connection_t * connList;
+session_t * sessionList;
 
-/* create a new connection to a server */
+/* create a new lwm2m session to a server */
 static void * prv_connect_server(uint16_t serverID, void * userData) {
     char * host;
     char * portStr;
-    char * ptr;
     int port;
-    connection_t * connP = NULL;
+    session_t * sessionP = NULL;
 
     INFO("Create connection for server %d", serverID);
 
@@ -83,82 +84,87 @@ static void * prv_connect_server(uint16_t serverID, void * userData) {
     char* uri = get_server_uri(securityObjP, serverID);
 
     if (uri == NULL) {
-        INFO("server %d not found in security object", serverID);
+        ERR("Server %d not found in security object", serverID);
         return NULL;
     }
-    INFO("URI: %s", uri);
+    INFO("URI for server %d: %s", serverID, uri);
 
-    // parse uri in the form "coaps://[host]:[port]"
+    // parse uri in the form "coap://[host]:[port]"
     if (0 == strncmp(uri, "coap://", strlen("coap://"))) {
         host = uri + strlen("coap://");
     } else {
+        ERR("Only coap URI is supported: %s", uri);
         goto exit;
     }
+
     portStr = strchr(host, ':');
-    if (portStr == NULL)
+    if (portStr == NULL) {
+        ERR("Port must be specify in URI: %s", uri);
         goto exit;
-    // split strings
+    }
+
     *portStr = 0;
-    portStr++;
+    portStr++; // jump the ':' character
+    char * ptr;
     port = strtol(portStr, &ptr, 10);
     if (*ptr != 0) {
+        ERR("Port in URI %s should be a number", uri);
         goto exit;
     }
 
-    INFO("Trying to connect to LWM2M Server at %s:%d", host, port);
+    INFO("Trying to connect to Server %s at %s:%d", serverID, host, port);
 
     //  create a connection
-    connP = (connection_t *) malloc(sizeof(connection_t));
-    if (connP == NULL) {
-        INFO("Connection creation fail (malloc)");
+    sessionP = (session_t *) malloc(sizeof(session_t));
+    if (sessionP == NULL) {
+        ERR("Session creation failed (malloc)");
         goto exit;
     } else {
-        connP->port = port;
-        connP->host = strdup(host);
-        connP->next = connList;
-        connP->ep.set_address(connP->host, port);
+        sessionP->port = port;
+        sessionP->host = strdup(host);
+        sessionP->next = sessionList;
+        sessionP->ep.set_address(sessionP->host, port);
 
-        connList = connP;
-        INFO("udp connection created");
+        sessionList = sessionP;
+        INFO("Lwm2m session created");
     }
+
     exit: free(uri);
 
-    return connP;
+    return sessionP;
 }
 
-/* send a buffer to a session*/
+/* send a buffer for a given session*/
 static uint8_t prv_buffer_send(void * sessionH, uint8_t * buffer, size_t length, void * userdata) {
-    INFO("sending");
-    connection_t * connP = (connection_t*) sessionH;
+    INFO("Sending data");
 
-    if (connP == NULL) {
-        INFO("#> failed sending %u bytes, missing connection", length);
+    session_t * session = (session_t*) sessionH;
+    if (session == NULL) {
+        ERR("Failed sending %u bytes, missing lwm2m session", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
-    INFO("sending to %s", connP->ep.get_address());
-
-    INFO("send NO_SEC datagram");
-    if (-1 == udp.sendTo(connP->ep, (char*) buffer, length)) {
-        INFO("send error");
+    INFO("Sending %u bytes to %s", length, session->ep.get_address());
+    int err = udp.sendTo(session->ep, (char*) buffer, length);
+    if (err < 0) {
+        ERR("Failed sending %u bytes to %s, error %d", length, session->ep.get_address(), err);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
     return COAP_NO_ERROR ;
 }
 
 int main() {
-    int result;
-
-    lwm2m_object_t * objArray[5];
-
-    INFO("Start Smart watch");
-
-    ethSetup();
+    INFO("Start");
     lcd.cls();
+    lcd.locate(0, 10);
+    lcd.printf("Starting ...");
 
-    INFO("Initialazing Wakaama");
+    INFO("Ethernet Setup");
+    ethSetup();
 
+    INFO("Initializing Wakaama");
     // create objects
+    lwm2m_object_t * objArray[5];
     objArray[0] = get_security_object(123, "coap://10.42.0.1:5683", false);
     securityObjP = objArray[0];
     objArray[1] = get_server_object(123, "U", 40, false);
@@ -167,84 +173,71 @@ int main() {
     objArray[3] = get_object_firmware();
     objArray[4] = get_object_accelerometer();
 
-    /*
-     * The liblwm2m library is now initialized with the functions that will be in
-     * charge of communication
-     */
+    // initialize Wakaama library with the functions that will be in
+    // charge of communication
     lwm2mH = lwm2m_init(prv_connect_server, prv_buffer_send, NULL);
     if (NULL == lwm2mH) {
-        fprintf(stderr, "lwm2m_init() failed");
+        ERR("Wakaama initialization failed");
         return -1;
     }
 
-    // configure the liblwm2m lib
-    result = lwm2m_configure(lwm2mH, "smart-watch", NULL, NULL, 5, objArray);
-
+    // configure wakaama
+    int result;
+    result = lwm2m_configure(lwm2mH, ENDPOINT_NAME, NULL, NULL, 5, objArray);
     if (result != 0) {
-        INFO("lwm2m_configure() failed: 0x%X", result);
+        ERR("Wakaama configuration failed: 0x%X", result);
         return -1;
     }
 
-    // start
-
+    // start Wakaama
     result = lwm2m_start(lwm2mH);
     if (result != 0) {
-        INFO("lwm2m_start() failed: 0x%X", result);
+        INFO("Wakaama start failed: 0x%X", result);
         return -1;
     }
 
-    // main loop
+    INFO("Start main loop");
 
     while (true) {
-        char buffer[1024];
-        Endpoint server;
 
         INFO("loop...");
-        struct timeval timeout;
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
 
+        // display current time
         time_t seconds = time(NULL);
         char buf[32];
         lcd.locate(0, 10);
         strftime(buf, 32, "%x : %r", localtime(&seconds));
         lcd.printf("%s", buf);
 
-        result = lwm2m_step(lwm2mH, &timeout.tv_sec);
+        // perform any required pending operation
+        time_t timeout = 10;
+        result = lwm2m_step(lwm2mH, &timeout);
         if (result != 0) {
-            INFO("lwm2m_step error %d", result);
+            INFO("Wakaama step failed : error 0x%X", result);
         }
-        int n = udp.receiveFrom(server, buffer, sizeof(buffer));
-        INFO("Received packet from: %s of size %d", server.get_address(), n);
-        if (n > 0) {
-            // TODO: find connection
-            connection_t * connP = connList;
-            while (connP != NULL) {
-                if (strcmp(connP->host, server.get_address()) == 0) {
 
-                    INFO("found connection");
-                    // is it a secure connection?
-                    INFO("nosec session");
-                    lwm2m_handle_packet(lwm2mH, (uint8_t*) buffer, n, (void*) connP);
+        // read on socket
+        char buffer[1024];
+        Endpoint server;
+        int n = udp.receiveFrom(server, buffer, sizeof(buffer));
+        if (n > 0) {
+            INFO("Received packet from: %s of size %d", server.get_address(), n);
+            INFO("Search corresponding session...");
+            session_t * session = sessionList;
+            while (session != NULL) {
+                if (strcmp(session->host, server.get_address()) == 0) {
+                    INFO("Session found, handle packet");
+                    lwm2m_handle_packet(lwm2mH, (uint8_t*) buffer, n, (void*) session);
                     break;
                 }
             }
-            if (connP == NULL)
-                INFO("no connection");
+            if (session == NULL)
+                INFO("No Session found, ignore packet");
         }
+
+        INFO("Accelerometer value change");
         lwm2m_uri_t URI1;
         URI1.objectId = 3313;
-        //URI1.resourceId = 5702;
         lwm2m_resource_value_changed(lwm2mH, &URI1);
-
-        /*lwm2m_uri_t URI2;
-         URI2.objectId = 3313;
-         URI2.resourceId = 5703;
-         lwm2m_resource_value_changed(lwm2mH, &URI2);
-
-         lwm2m_uri_t URI3;
-         URI3.objectId = 3313;
-         URI3.resourceId = 5704;
-         lwm2m_resource_value_changed(lwm2mH, &URI3);*/
     }
 }
