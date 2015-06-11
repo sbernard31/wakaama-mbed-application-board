@@ -16,7 +16,6 @@
  *******************************************************************************/
 #include "mbed.h"
 #include "EthernetInterface.h"
-#include "mbed/rtc_api.h"
 #include "C12832.h"
 #include "object_accelerometer.cpp"
 
