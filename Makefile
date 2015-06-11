@@ -1,4 +1,4 @@
-APP_OBJ = main.o object_device.o object_security.o object_firmware.o object_server.o
+APP_OBJ = main.o 
 
 LCD_OBJ = ./C12832/TextDisplay.o ./C12832/GraphicsDisplay.o ./C12832/C12832.o
 LCD_INC = -I./C12832
@@ -6,7 +6,8 @@ LCD_INC = -I./C12832
 ACCELEROMETERS_OBJ = ./MMA7660/MMA7660.o
 ACCELEROMETERS_INC = -I./MMA7660
 
-WAKAAMA_OBJ = ./wakaama/observe.o ./wakaama/transaction.o ./wakaama/bootstrap.o ./wakaama/list.o ./wakaama/liblwm2m.o ./wakaama/utils.o ./wakaama/objects.o ./wakaama/packet.o ./wakaama/tlv.o ./wakaama/management.o ./wakaama/uri.o ./wakaama/registration.o ./wakaama/er-coap-13/er-coap-13.o
+WAKAAMA_CLIENT_OBJ = ./wakaama/client_objects/object_device.o ./wakaama/client_objects/object_security.o ./wakaama/client_objects/object_firmware.o ./wakaama/client_objects/object_server.o
+WAKAAMA_OBJ = $(WAKAAMA_CLIENT_OBJ) ./wakaama/observe.o ./wakaama/transaction.o ./wakaama/bootstrap.o ./wakaama/list.o ./wakaama/liblwm2m.o ./wakaama/utils.o ./wakaama/objects.o ./wakaama/packet.o ./wakaama/tlv.o ./wakaama/management.o ./wakaama/uri.o ./wakaama/registration.o ./wakaama/er-coap-13/er-coap-13.o
 WAKAAMA_INC = -I./wakaama -I./wakaama/er-coap-13
 WAKAAMA_SYM = -DWITH_LOGS -DLWM2M_LITTLE_ENDIAN -DLWM2M_CLIENT_MODE
 
