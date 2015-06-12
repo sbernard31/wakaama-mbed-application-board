@@ -29,10 +29,6 @@
 #define RES_COLOUR          5706
 #define RES_ON_OFF          5850
 
-PwmOut * rpw;
-PwmOut * gpw;
-PwmOut * bpw;
-
 typedef struct {
     // state of the light
     bool on;
@@ -42,8 +38,32 @@ typedef struct {
     float bv;
 } rgb_data_t;
 
+PwmOut * rpw;
+PwmOut * gpw;
+PwmOut * bpw;
+
+InterruptIn on_button(p13);
+InterruptIn off_button(p16);
+rgb_data_t * state;
+
+void switchon() {
+    INFO("LIGHT ON");
+    state->on = true;
+    *rpw = state->rv;
+    *gpw = state->gv;
+    *bpw = state->bv;
+}
+
+void switchoff() {
+    INFO("LIGHT OFF");
+    state->on = false;
+    *rpw = 1.0f;
+    *gpw = 1.0f;
+    *bpw = 1.0f;
+}
+
 // change the led color
-static int set_color(const char * htmlcolor,unsigned length, rgb_data_t * rgb) {
+static int set_color(const char * htmlcolor, unsigned length, rgb_data_t * rgb) {
     // create color string ended with \0
     char color[length + 1];
     memset(color, 0, length + 1);
@@ -80,7 +100,7 @@ static char * get_color(rgb_data_t * rgb) {
     int b = (1.0f - rgb->bv) * 255;
 
     // build the corresponding string
-    INFO("Read Color rgb(%d,%d,%d)",r,g,b);
+    INFO("Read Color rgb(%d,%d,%d)", r, g, b);
     char * color = (char *) malloc(8);
     if (0 > sprintf(color, "#%02X%02X%02X", r, g, b)) {
         ERR("failed to create color string, sprintf failed");
@@ -171,19 +191,10 @@ static uint8_t prv_rgb_write(uint16_t instanceId, int numData, lwm2m_tlv_t * dat
         case RES_ON_OFF:
             bool on;
             if (1 == lwm2m_tlv_decode_bool(dataArray + i, &on)) {
-                rgb_data_t * rgb = (rgb_data_t*) (objectP->userData);
                 if (on) {
-                    INFO ("LIGHT ON");
-                    rgb->on = true;
-                    *rpw = rgb->rv;
-                    *gpw = rgb->gv;
-                    *bpw = rgb->bv;
+                    switchon();
                 } else {
-                    INFO ("LIGHT OFF");
-                    rgb->on = false;
-                    *rpw = 1.0f;
-                    *gpw = 1.0f;
-                    *bpw = 1.0f;
+                    switchoff();
                 }
                 result = COAP_204_CHANGED;
             } else {
@@ -260,7 +271,8 @@ lwm2m_object_t * get_object_rgb_led() {
         rgbObj->writeFunc = prv_rgb_write;
         rgbObj->executeFunc = NULL;
         rgbObj->closeFunc = prv_rgb_close;
-        rgbObj->userData = lwm2m_malloc(sizeof(rgb_data_t));
+        state = (rgb_data_t *) lwm2m_malloc(sizeof(rgb_data_t));
+        rgbObj->userData = state;
 
         /*
          * Also some user data can be stored in the object with a private structure containing the needed variables 
@@ -285,6 +297,9 @@ lwm2m_object_t * get_object_rgb_led() {
             lwm2m_free(rgbObj);
             rgbObj = NULL;
         }
+
+        on_button.rise(&switchon);
+        off_button.rise(&switchoff);
     }
 
     return rgbObj;
