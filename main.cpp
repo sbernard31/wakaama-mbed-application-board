@@ -22,6 +22,7 @@
 #include "EthernetInterface.h"
 #include "C12832.h"
 #include "object_accelerometer.cpp"
+#include "object_rgb_led.cpp"
 #include "dbg.h"
 
 extern "C" {
@@ -164,7 +165,7 @@ int main() {
 
     INFO("Initializing Wakaama");
     // create objects
-    lwm2m_object_t * objArray[5];
+    lwm2m_object_t * objArray[6];
     objArray[0] = get_security_object(123, "coap://10.42.0.1:5683", false);
     securityObjP = objArray[0];
     objArray[1] = get_server_object(123, "U", 40, false);
@@ -172,6 +173,7 @@ int main() {
     objArray[2] = get_object_device();
     objArray[3] = get_object_firmware();
     objArray[4] = get_object_accelerometer();
+    objArray[5] = get_object_rgb_led();
 
     // initialize Wakaama library with the functions that will be in
     // charge of communication
@@ -183,7 +185,7 @@ int main() {
 
     // configure wakaama
     int result;
-    result = lwm2m_configure(lwm2mH, ENDPOINT_NAME, NULL, NULL, 5, objArray);
+    result = lwm2m_configure(lwm2mH, ENDPOINT_NAME, NULL, NULL, 6, objArray);
     if (result != 0) {
         ERR("Wakaama configuration failed: 0x%X", result);
         return -1;
