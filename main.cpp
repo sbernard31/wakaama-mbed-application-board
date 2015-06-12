@@ -23,6 +23,7 @@
 #include "C12832.h"
 #include "object_accelerometer.cpp"
 #include "object_rgb_led.cpp"
+#include "object_temperature.cpp"
 #include "dbg.h"
 
 extern "C" {
@@ -165,7 +166,7 @@ int main() {
 
     INFO("Initializing Wakaama");
     // create objects
-    lwm2m_object_t * objArray[6];
+    lwm2m_object_t * objArray[7];
     objArray[0] = get_security_object(123, "coap://10.42.0.1:5683", false);
     securityObjP = objArray[0];
     objArray[1] = get_server_object(123, "U", 40, false);
@@ -174,6 +175,7 @@ int main() {
     objArray[3] = get_object_firmware();
     objArray[4] = get_object_accelerometer();
     objArray[5] = get_object_rgb_led();
+    objArray[6] = get_object_temperature();
 
     // initialize Wakaama library with the functions that will be in
     // charge of communication
@@ -185,7 +187,7 @@ int main() {
 
     // configure wakaama
     int result;
-    result = lwm2m_configure(lwm2mH, ENDPOINT_NAME, NULL, NULL, 6, objArray);
+    result = lwm2m_configure(lwm2mH, ENDPOINT_NAME, NULL, NULL, 7, objArray);
     if (result != 0) {
         ERR("Wakaama configuration failed: 0x%X", result);
         return -1;
@@ -200,6 +202,9 @@ int main() {
 
     INFO("Start main loop");
 
+    // clear LCD
+    lcd.cls();
+
     while (true) {
 
         INFO("loop...");
@@ -207,9 +212,13 @@ int main() {
         // display current time
         time_t seconds = time(NULL);
         char buf[32];
-        lcd.locate(0, 10);
+        lcd.locate(10, 10);
         strftime(buf, 32, "%x : %r", localtime(&seconds));
         lcd.printf("%s", buf);
+
+        // display current temperature
+        lcd.locate(45, 20);
+        lcd.printf("%4.2f C", getCurrentTemp());
 
         // perform any required pending operation
         time_t timeout = 10;
@@ -237,9 +246,15 @@ int main() {
                 INFO("No Session found, ignore packet");
         }
 
-        INFO("Accelerometer value change");
-        lwm2m_uri_t URI1;
-        URI1.objectId = 3313;
-        lwm2m_resource_value_changed(lwm2mH, &URI1);
+        INFO("Fire object accelerometer changed");
+        lwm2m_uri_t accelerometer_URI;
+        accelerometer_URI.objectId = 3313;
+        lwm2m_resource_value_changed(lwm2mH, &accelerometer_URI);
+
+        // TODO understand why this is not possible to
+        // fire a value change for temperature and accelerometer as same time
+//        lwm2m_uri_t temperature_URI;
+//        temperature_URI.objectId = 3303;
+//        lwm2m_resource_value_changed(lwm2mH, &temperature_URI);
     }
 }
