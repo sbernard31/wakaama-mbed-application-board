@@ -11,7 +11,6 @@
  *    http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
- *    Julien Vermillard,
  *    Simon Bernard
  *******************************************************************************/
 
@@ -27,7 +26,7 @@
 
 MMA7660 MMA(p28, p27);
 
-#define PRV_MIN_RANGE_VALUE   0.0
+#define PRV_MIN_RANGE_VALUE   -1.0f
 #define PRV_MAX_RANGE_VALUE   1.0f
 #define PRV_SENSOR_UNITS      "g"
 
