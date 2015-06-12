@@ -14,10 +14,6 @@
  *    Julien Vermillard,
  *    Simon Bernard
  *******************************************************************************/
-#ifndef __MODULE__
-#define __MODULE__ "main.cpp"
-#endif
-
 #include "mbed.h"
 #include "EthernetInterface.h"
 #include "C12832.h"
@@ -38,8 +34,15 @@ extern lwm2m_object_t * get_security_object(int serverId, const char* serverUri,
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
 }
 
+#ifndef ENDPOINT_NAME
 #define ENDPOINT_NAME "lcp1768"
+#endif
+#ifndef LOOP_TIMEOUT
 #define LOOP_TIMEOUT 1000
+#endif
+#ifndef SERVER_URI
+#define SERVER_URI "coap://10.42.0.1:5683"
+#endif
 
 // a linked logical lwm2m session to a server
 typedef struct session_t {
@@ -167,7 +170,7 @@ int main() {
     INFO("Initializing Wakaama");
     // create objects
     lwm2m_object_t * objArray[7];
-    objArray[0] = get_security_object(123, "coap://10.42.0.1:5683", false);
+    objArray[0] = get_security_object(123, SERVER_URI, false);
     securityObjP = objArray[0];
     objArray[1] = get_server_object(123, "U", 40, false);
     serverObject = objArray[1];
