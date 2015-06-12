@@ -26,9 +26,9 @@
 
 MMA7660 MMA(p28, p27);
 
-#define PRV_MIN_RANGE_VALUE   -1.0f
-#define PRV_MAX_RANGE_VALUE   1.0f
-#define PRV_SENSOR_UNITS      "g"
+#define PRV_MIN_RANGE_VALUE              -1.0f
+#define PRV_MAX_RANGE_VALUE              1.0f
+#define PRV_ACCELEROMETER_SENSOR_UNITS   "g"
 
 #define LWM2M_ACCELEROMETER_OBJECT_ID   3313
 
@@ -67,8 +67,8 @@ static uint8_t prv_set_value(lwm2m_tlv_t * tlvP, accelometer_data_t * devDataP) 
         return COAP_205_CONTENT ;
 
     case RES_SENSOR_UNITS:
-        tlvP->value = (uint8_t*) PRV_SENSOR_UNITS;
-        tlvP->length = strlen(PRV_SENSOR_UNITS);
+        tlvP->value = (uint8_t*) PRV_ACCELEROMETER_SENSOR_UNITS;
+        tlvP->length = strlen(PRV_ACCELEROMETER_SENSOR_UNITS);
         tlvP->flags = LWM2M_TLV_FLAG_STATIC_DATA;
         tlvP->type = LWM2M_TYPE_RESOURCE;
         tlvP->dataType = LWM2M_TYPE_STRING;
