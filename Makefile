@@ -57,6 +57,17 @@ else
   CC_FLAGS += -DNDEBUG -Os
 endif
 
+ifneq ($(origin ENDPOINT_NAME),  undefined)
+  CC_SYMBOLS += -DENDPOINT_NAME=\"${ENDPOINT_NAME}\"
+endif
+ifneq ($(origin SERVER_URI), undefined)
+  CC_SYMBOLS += -DSERVER_URI=\"${SERVER_URI}\"
+endif
+ifneq ($(origin LOOP_TIMEOUT), undefined)
+  CC_SYMBOLS += -DLOOP_TIMEOUT=${LOOP_TIMEOUT}
+endif
+
+
 all: $(PROJECT).bin $(PROJECT).hex 
 
 clean:

@@ -38,10 +38,10 @@ extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t serverID);
 #define ENDPOINT_NAME "lcp1768"
 #endif
 #ifndef LOOP_TIMEOUT
-#define LOOP_TIMEOUT 1000
+#define LOOP_TIMEOUT 1000 //ms
 #endif
 #ifndef SERVER_URI
-#define SERVER_URI "coap://10.42.0.1:5683"
+#define SERVER_URI "coap://5.39.83.206:5683" // leshan sandbox : http://leshan.eclipse.org
 #endif
 
 // a linked logical lwm2m session to a server
