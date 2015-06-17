@@ -151,6 +151,7 @@ coap_status_t object_read(lwm2m_context_t * contextP,
                 if (*lengthP == 0) result = COAP_500_INTERNAL_SERVER_ERROR;
             }
             lwm2m_tlv_free(size, tlvP);
+
             return result;
         }
     }

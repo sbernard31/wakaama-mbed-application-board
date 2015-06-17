@@ -63,9 +63,13 @@ extern "C" {
 #include <sys/time.h>
 
 #ifndef LWM2M_EMBEDDED_MODE
+#ifdef MEMORY_TRACE
+#include "memtrace.h"
+#else
 #define lwm2m_malloc malloc
 #define lwm2m_free free
 #define lwm2m_strdup strdup
+#endif
 #define lwm2m_strncmp strncmp
 #else
 void * lwm2m_malloc(size_t s);
@@ -384,7 +388,6 @@ typedef struct _lwm2m_server_
     void *            sessionH;
     lwm2m_status_t    status;
     char *            location;
-    uint16_t          mid;
 } lwm2m_server_t;
 
 
@@ -467,6 +470,8 @@ struct _lwm2m_transaction_
     uint16_t              mID;   // matches lwm2m_list_t::id
     lwm2m_endpoint_type_t peerType;
     void *                peerP;
+    uint8_t               ack_received; // indicates, that the ACK was received
+    time_t                response_timeout; // timeout to wait for response, if token is used. When 0, use calculated acknowledge timeout.
     uint8_t  retrans_counter;
     time_t   retrans_time;
     char objStringID[LWM2M_STRING_ID_MAX_LEN];
@@ -524,6 +529,16 @@ typedef void * (*lwm2m_connect_server_callback_t)(uint16_t secObjInstID, void * 
 // The session handle MUST uniquely identify a peer.
 typedef uint8_t (*lwm2m_buffer_send_callback_t)(void * sessionH, uint8_t * buffer, size_t length, void * userData);
 
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+// In all the following APIs, the session handle MUST uniquely identify a peer.
+
+// LWM2M bootstrap callback
+// When a LWM2M client requests bootstrap information, the callback is called with status COAP_NO_ERROR, uriP is nil and
+// name is set. The callback must return a COAP_* error code. COAP_204_CHANGED for success.
+// After a lwm2m_bootstrap_delete() or a lwm2m_bootstrap_write(), the callback is called with the status returned by the
+// client, the URI of the operation (may be nil) and name is nil. The callback return value is ignored.
+typedef int (*lwm2m_bootstrap_callback_t) (void * sessionH, uint8_t status, lwm2m_uri_t * uriP, char * name, void * userData);
+#endif
 
 typedef struct
 {
@@ -545,6 +560,10 @@ typedef struct
     lwm2m_client_t *        clientList;
     lwm2m_result_callback_t monitorCallback;
     void *                  monitorUserData;
+#endif
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+    lwm2m_bootstrap_callback_t bootstrapCallback;
+    void *                     bootstrapUserData;
 #endif
     uint16_t                nextMID;
     lwm2m_transaction_t *   transactionList;
@@ -600,6 +619,18 @@ int lwm2m_dm_delete(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t *
 // Information Reporting APIs
 int lwm2m_observe(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
 int lwm2m_observe_cancel(lwm2m_context_t * contextP, uint16_t clientID, lwm2m_uri_t * uriP, lwm2m_result_callback_t callback, void * userData);
+#endif
+
+#ifdef LWM2M_BOOTSTRAP_SERVER_MODE
+// Clients bootstrap request monitoring API.
+// When a LWM2M client sends a bootstrap request, the callback is called with the client's endpoint name.
+void lwm2m_set_bootstrap_callback(lwm2m_context_t * contextP, lwm2m_bootstrap_callback_t callback, void * userData);
+
+// Boostrap Interface APIs
+// if uriP is nil, a "Delete /" is sent to the client
+int lwm2m_bootstrap_delete(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP);
+int lwm2m_bootstrap_write(lwm2m_context_t * contextP, void * sessionH, lwm2m_uri_t * uriP, uint8_t * buffer, size_t length);
+
 #endif
 
 #ifdef __cplusplus

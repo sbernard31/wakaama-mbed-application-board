@@ -185,7 +185,7 @@ coap_status_t handle_dm_request(lwm2m_context_t * contextP,
 #ifdef LWM2M_BOOTSTRAP
                 if (contextP->bsState == BOOTSTRAP_PENDING && object_isInstanceNew(contextP, uriP->objectId, uriP->instanceId))
                 {
-                    result = object_create(contextP, uriP, (char*)message->payload, message->payload_len);
+                    result = object_create(contextP, uriP, message->payload, message->payload_len);
                     if (COAP_201_CREATED == result)
                     {
                         result = COAP_204_CHANGED;
@@ -336,7 +336,7 @@ static int prv_make_operation(lwm2m_context_t * contextP,
     clientP = (lwm2m_client_t *)lwm2m_list_find((lwm2m_list_t *)contextP->clientList, clientID);
     if (clientP == NULL) return COAP_404_NOT_FOUND;
 
-    transaction = transaction_new(method, clientP->altPath, uriP, contextP->nextMID++, ENDPOINT_CLIENT, (void *)clientP);
+    transaction = transaction_new(COAP_TYPE_CON, method, clientP->altPath, uriP, contextP->nextMID++, 4, NULL, ENDPOINT_CLIENT, (void *)clientP);
     if (transaction == NULL) return INTERNAL_SERVER_ERROR_5_00;
 
     if (buffer != NULL)

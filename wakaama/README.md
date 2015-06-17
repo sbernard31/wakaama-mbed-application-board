@@ -1,8 +1,7 @@
-This is a modified version of [wakaama](https://github.com/eclipse/wakaama/) : commit b01c941413838ab1652c64b3832200666d87b5cc
+This is a modified version of [wakaama](https://github.com/eclipse/wakaama/) : commit 7ddd81c3252f125d796139c452da2bf9b76d1126
 
 Files modified : 
 ```
-*fix warnings*                        -> internals.h, liblwm2m.c, liblwm2m.c, management.c, packet.c, utils.c
 *re-implement lwm2m_gettime function* -> utils.c
 *implement set time for mbed device*   -> object_device.c
 ```
