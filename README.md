@@ -15,9 +15,9 @@ RGB Led, accelerometer and temperature sensor is mapped on [IPSO Smart Objects](
 The LCD screen shows times and temperature.
 You can use joystick to switch on/off the light (left:on, right:off)
 
-* You can change/read time via _Lwm2m Device object_ (3).
-* You can switch on/off the light or choose the color via _Light Control object_ (3311).
-* You can watch temperature via _Temperature Sensor object_ (3303).
+* You can write/read/observe time via _Lwm2m Device object_ (3).
+* You can switch on/off the light (write/read/observe) or choose the color (read/write) via _Light Control object_ (3311).
+* You can read/observe temperature via _Temperature Sensor object_ (3303).
 * You can read/observe 1-3 axis position via _Accelerometer Sensor object_ (3313).
 
 # Compile and try it

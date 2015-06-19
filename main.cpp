@@ -247,17 +247,23 @@ int main() {
             }
             if (session == NULL)
                 INFO("No Session found, ignore packet");
+        }else{
+            INFO("Fire object accelerometer, temperature and time changed");
+            lwm2m_uri_t accelerometer_URI;
+            lwm2m_stringToUri("/3313",5, &accelerometer_URI);
+            lwm2m_resource_value_changed(lwm2mH, &accelerometer_URI);
+
+            lwm2m_uri_t temperature_URI;
+            lwm2m_stringToUri("/3303/0/5700",12, &temperature_URI);
+            lwm2m_resource_value_changed(lwm2mH, &temperature_URI);
+
+            lwm2m_uri_t device_time_URI;
+            lwm2m_stringToUri("/3/0/13",7, &device_time_URI);
+            lwm2m_resource_value_changed(lwm2mH, &device_time_URI);
+
+            lwm2m_uri_t switch_light_URI;
+            lwm2m_stringToUri("/3311/0/5850",12, &switch_light_URI);
+            lwm2m_resource_value_changed(lwm2mH, &switch_light_URI);
         }
-
-        INFO("Fire object accelerometer changed");
-        lwm2m_uri_t accelerometer_URI;
-        accelerometer_URI.objectId = 3313;
-        lwm2m_resource_value_changed(lwm2mH, &accelerometer_URI);
-
-        // TODO understand why this is not possible to
-        // fire a value change for temperature and accelerometer as same time
-//        lwm2m_uri_t temperature_URI;
-//        temperature_URI.objectId = 3303;
-//        lwm2m_resource_value_changed(lwm2mH, &temperature_URI);
     }
 }
