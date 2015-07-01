@@ -9,6 +9,9 @@ ACCELEROMETERS_INC = -I./MMA7660
 TEMPERATURE_OBJ = ./LM75B/LM75B.o
 TEMPERATURE_INC = -I./LM75B
 
+SWUPDATE_OBJ = ./SWUpdate/SWUpdate.o ./HTTPClient/HTTPClient.o ./HTTPClient/data/HTTPFile.o ./HTTPClient/data/HTTPMap.o ./HTTPClient/data/HTTPText.o
+SWUPDATE_INC = -I./SWUpdate -I./HTTPClient -I./HTTPClient/data
+
 WAKAAMA_CLIENT_OBJ = ./wakaama/client_objects/object_device.o ./wakaama/client_objects/object_security.o ./wakaama/client_objects/object_firmware.o ./wakaama/client_objects/object_server.o
 WAKAAMA_OBJ = $(WAKAAMA_CLIENT_OBJ) ./wakaama/observe.o ./wakaama/transaction.o ./wakaama/bootstrap.o ./wakaama/list.o ./wakaama/liblwm2m.o ./wakaama/utils.o ./wakaama/objects.o ./wakaama/packet.o ./wakaama/tlv.o ./wakaama/management.o ./wakaama/uri.o ./wakaama/registration.o ./wakaama/er-coap-13/er-coap-13.o
 WAKAAMA_INC = -I./wakaama -I./wakaama/er-coap-13
@@ -23,9 +26,9 @@ RTOS_INC = -I./mbed-rtos -I./mbed-rtos/rtos -I./mbed-rtos/rtx -I./mbed-rtos/rtx/
 ###############################################################################
 GCC_BIN = 
 PROJECT = lpc1768_lwm2m
-OBJECTS = $(APP_OBJ) $(LCD_OBJ) $(TEMPERATURE_OBJ) $(ACCELEROMETERS_OBJ) $(WAKAAMA_OBJ) $(ETHERNET_OBJ) $(RTOS_OBJ) 
+OBJECTS = $(APP_OBJ) $(LCD_OBJ) $(TEMPERATURE_OBJ) $(ACCELEROMETERS_OBJ) $(SWUPDATE_OBJ) $(WAKAAMA_OBJ) $(ETHERNET_OBJ) $(RTOS_OBJ) 
 SYS_OBJECTS = ./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/retarget.o ./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/system_LPC17xx.o ./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/board.o ./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/cmsis_nvic.o ./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/startup_LPC17xx.o 
-INCLUDE_PATHS = $(LCD_INC) $(TEMPERATURE_INC) $(ACCELEROMETERS_INC) $(WAKAAMA_INC) $(ETHERNET_INC) $(RTOS_INC) -I. -I./mbed -I./mbed/TARGET_LPC1768 -I./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM -I./mbed/TARGET_LPC1768/TARGET_NXP -I./mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X -I./mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X/TARGET_MBED_LPC1768 
+INCLUDE_PATHS = $(LCD_INC) $(TEMPERATURE_INC) $(ACCELEROMETERS_INC) $(SWUPDATE_INC) $(WAKAAMA_INC) $(ETHERNET_INC) $(RTOS_INC) -I. -I./mbed -I./mbed/TARGET_LPC1768 -I./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM -I./mbed/TARGET_LPC1768/TARGET_NXP -I./mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X -I./mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X/TARGET_MBED_LPC1768 
 LIBRARY_PATHS = -L./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
 LIBRARIES = -lmbed 
 LINKER_SCRIPT = ./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/LPC1768.ld

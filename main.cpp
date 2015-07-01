@@ -17,6 +17,8 @@
 #include "mbed.h"
 #include "EthernetInterface.h"
 #include "C12832.h"
+#include "SWUpdate.h"
+
 #include "object_accelerometer.cpp"
 #include "object_rgb_led.cpp"
 #include "object_temperature.cpp"
@@ -25,6 +27,8 @@
 extern "C" {
 #include "wakaama/liblwm2m.h"
 }
+
+#include "wakaama/client_objects/object_firmware.h"
 
 extern "C" {
 extern lwm2m_object_t * get_object_device();
@@ -51,6 +55,9 @@ typedef struct session_t {
     int port;
     Endpoint ep;
 } session_t;
+
+LocalFileSystem local("local");     // Create the local filesystem under the name "local"
+                                    // Will be used for firmware upgrades temp files
 
 // the lcd screen
 C12832 lcd(p5, p7, p6, p8, p11);
@@ -158,6 +165,38 @@ static uint8_t prv_buffer_send(void * sessionH, uint8_t * buffer, size_t length,
     return COAP_NO_ERROR ;
 }
 
+void update_firmware(lwm2m_object_t* obj) {
+    INFO("*** EXEC FW UPDATE *** \n");
+
+    char* package_url = ((firmware_data_t *) (obj->userData) )->package_url;
+
+    INFO("*** PACKAGE URL *** %s \n", package_url);
+    char file[200];
+    char rootUrl[200];
+    memset(file, '\0', 200);
+    memset(rootUrl, '\0', 200);
+    
+    // Split URL in two bits: root path, and software package root filename
+    if(strlen(package_url) > 0) {
+        for(int i = strlen(package_url) ; i > 0 ; i--) {
+            if(package_url[i-1] == '/') {
+                strncpy(file, & package_url[i], strlen(& package_url[i]));
+                memcpy(rootUrl, package_url, i-1);
+                rootUrl[i] = '\0';
+                
+                INFO("[[ %s --- %s ]] \n", rootUrl, file);
+
+                if(strlen(file) > 0) {
+                    if (SWUP_OK == SoftwareUpdate(rootUrl, file));
+                }
+
+                break;
+            }
+        }
+    }
+    
+}
+
 int main() {
     INFO("Start");
     lcd.cls();
@@ -176,6 +215,8 @@ int main() {
     serverObject = objArray[1];
     objArray[2] = get_object_device();
     objArray[3] = get_object_firmware();
+    ((firmware_data_t*)objArray[3]->userData)->updatefw_function = update_firmware;
+
     objArray[4] = get_object_accelerometer();
     objArray[5] = get_object_rgb_led();
     objArray[6] = get_object_temperature();
