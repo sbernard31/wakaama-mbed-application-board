@@ -35,7 +35,8 @@
  */
 
 #include "liblwm2m.h"
-
+#include "object_firmware.h"
+ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,13 +52,6 @@
 #define RES_M_UPDATE_RESULT             5
 #define RES_O_PKG_NAME                  6
 #define RES_O_PKG_VERSION               7
-
-typedef struct
-{
-    uint8_t state;
-    uint8_t supported;
-    uint8_t result;
-} firmware_data_t;
 
 
 static uint8_t prv_firmware_read(uint16_t instanceId,
@@ -164,6 +158,9 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
 
         case RES_M_PACKAGE_URI:
             // URL for download the firmware
+            memset(data->package_url, 0, sizeof(data->package_url));
+            strncpy(data->package_url, dataArray[i].value, dataArray[i].length);
+
             result = COAP_204_CHANGED;
             break;
 
@@ -211,9 +208,10 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
     case RES_M_UPDATE:
         if (data->state == 1)
         {
-            fprintf(stdout, "\n\t FIRMWARE UPDATE\r\n\n");
-            // trigger your firmware download and update logic
             data->state = 2;
+            // trigger your firmware download and update logic
+            data->updatefw_function(objectP);
+            data->state = 1;
             return COAP_204_CHANGED;
         }
         else
